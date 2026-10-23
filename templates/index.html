@@ -1,0 +1,648 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CYBER // Command Center</title>
+<style>
+    
+:root {
+  --bg: #080c12;
+  --panel: #101720;
+  --border: #202e3b;
+  --green: #45ffb0;
+  --blue: #4ac8ff;
+  --text: #e6f1f7;
+  --muted: #8495a6;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Consolas, "Courier New", monospace;
+}
+.layout { display: flex; min-height: 100vh; }
+.sidebar {
+  width: 220px;
+  padding: 28px 18px;
+  border-right: 1px solid var(--border);
+  background: #0b1119;
+  flex-shrink: 0;
+}
+.brand {
+  color: var(--green);
+  font-size: 18px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+.brand small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 8px;
+  letter-spacing: 2px;
+}
+.nav-title {
+  color: #617488;
+  font-size: 10px;
+  margin: 40px 0 12px;
+  letter-spacing: 2px;
+}
+.nav-item {
+  padding: 13px 10px;
+  margin: 6px 0;
+  color: var(--muted);
+  border-radius: 5px;
+  font-size: 12px;
+}
+.nav-item.active {
+  color: var(--green);
+  background: #10271f;
+  border-left: 2px solid var(--green);
+}
+.sidebar-note {
+  margin-top: 50px;
+  color: #718393;
+  font-size: 11px;
+  line-height: 1.9;
+}
+main { flex: 1; min-width: 0; padding: 30px; }
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  flex-wrap: wrap;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+.eyebrow { color: var(--green); font-size: 10px; letter-spacing: 2px; }
+h1 { font-size: clamp(20px, 3vw, 30px); margin: 10px 0; }
+.subtitle { color: var(--muted); font-size: 12px; }
+.status { color: var(--green); font-size: 11px; }
+.status::before { content: "● "; }
+.section-label {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  margin: 28px 0 14px;
+}
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.panel {
+  background: linear-gradient(145deg, #121c27, #0d141d);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 20px;
+  min-width: 0;
+}
+.metric-label { color: var(--muted); font-size: 11px; }
+.metric-value {
+  font-size: clamp(25px, 3vw, 36px);
+  margin: 16px 0 8px;
+  font-weight: bold;
+}
+.green { color: var(--green); }
+.blue { color: var(--blue); }
+.metric-foot { font-size: 11px; color: var(--muted); }
+.track {
+  height: 4px;
+  background: #26323d;
+  border-radius: 4px;
+  margin: 16px 0 12px;
+  overflow: hidden;
+}
+.fill {
+  height: 100%;
+  width: 0%;
+  background: var(--green);
+  transition: width .5s;
+}
+.fill.blue-fill { background: var(--blue); }
+.charts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.chart-title { font-size: 12px; margin-bottom: 6px; }
+canvas { display: block; width: 100%; height: 150px; }
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 20px;
+}
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+}
+.info-row span:first-child { color: var(--muted); }
+.info-row span:last-child {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+footer { color: #657789; font-size: 10px; margin-top: 25px; }
+@media(max-width: 850px) {
+  .sidebar { width: 175px; }
+  main { padding: 20px; }
+  .metrics { grid-template-columns: 1fr; }
+}
+@media(max-width: 600px) {
+  .sidebar { display: none; }
+  main { padding: 16px; }
+  .charts, .info-grid { grid-template-columns: 1fr; }
+}
+
+</style>
+</head>
+<body>
+<div class="layout">
+
+<aside class="sidebar">
+  <div class="brand">CYBER<span class="green">/</span>CC
+    <small>SYSTEM MONITOR v1.0</small>
+  </div>
+
+  <div class="nav-title">WORKSPACE</div>
+
+  <div class="nav-item active"
+       role="button" tabindex="0"
+       data-target="overview">
+    ◈ &nbsp; Overview
+  </div>
+
+  <div class="nav-item"
+       role="button" tabindex="0"
+       data-target="cpuChart">
+    ▤ &nbsp; Performance
+  </div>
+
+  <div class="nav-item"
+       role="button" tabindex="0"
+       data-target="host">
+    ⌘ &nbsp; System info
+  </div>
+
+  <div class="nav-title">SYSTEM</div>
+
+  <div class="nav-item"
+       role="button" tabindex="0"
+       data-target="connection">
+    ◎ &nbsp; Local monitor
+  </div>
+
+  <div class="sidebar-note">
+    MONITOR STATUS<br>
+    <span class="green">● LOCAL CONNECTION</span><br><br>
+    Data is collected from<br>your own computer.
+  </div>
+</aside>
+
+  <main>
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">/ COMMAND CENTER / OVERVIEW</div>
+        <h1>System Monitor</h1>
+        <div class="subtitle">Real-time local system telemetry</div>
+      </div>
+      <div id="connection" class="status">CONNECTING</div>
+    </header>
+
+    <div class="section-label">01 / RESOURCE UTILIZATION</div>
+    <section class="metrics">
+      <div class="panel">
+        <div class="metric-label">CPU UTILIZATION</div>
+        <div class="metric-value green" id="cpu">--%</div>
+        <div class="track"><div class="fill" id="cpuBar"></div></div>
+        <div class="metric-foot">Processor load</div>
+      </div>
+      <div class="panel">
+        <div class="metric-label">MEMORY USAGE</div>
+        <div class="metric-value blue" id="ram">--%</div>
+        <div class="track"><div class="fill blue-fill" id="ramBar"></div></div>
+        <div class="metric-foot" id="ramDetail">Reading memory...</div>
+      </div>
+      <div class="panel">
+        <div class="metric-label">DRIVE C: USAGE</div>
+        <div class="metric-value" id="disk">--%</div>
+        <div class="track"><div class="fill" id="diskBar"></div></div>
+        <div class="metric-foot" id="diskDetail">Reading storage...</div>
+      </div>
+    </section>
+
+    <div class="section-label">02 / LIVE TELEMETRY</div>
+    <section class="charts">
+      <div class="panel">
+        <div class="chart-title">CPU LOAD HISTORY</div>
+        <div class="metric-foot">Recent readings · %</div>
+        <canvas id="cpuChart"></canvas>
+      </div>
+      <div class="panel">
+        <div class="chart-title">MEMORY LOAD HISTORY</div>
+        <div class="metric-foot">Recent readings · %</div>
+        <canvas id="ramChart"></canvas>
+      </div>
+    </section>
+
+    <div class="section-label">03 / HOST INFORMATION</div>
+    <section class="panel">
+      <div class="info-grid">
+        <div class="info-row"><span>HOSTNAME</span><span id="host">--</span></div>
+        <div class="info-row"><span>OPERATING SYSTEM</span><span id="os">--</span></div>
+        <div class="info-row"><span>MEMORY TOTAL</span><span id="ramTotal">--</span></div>
+        <div class="info-row"><span>MEMORY AVAILABLE</span><span id="ramAvailable">--</span></div>
+        <div class="info-row"><span>DRIVE CAPACITY</span><span id="diskTotal">--</span></div>
+        <div class="info-row"><span>FREE DISK SPACE</span><span id="diskFree">--</span></div>
+        <div class="info-row"><span>SYSTEM UPTIME</span><span id="uptime">--</span></div>
+        <div class="info-row"><span>LAST UPDATED</span><span id="updated">--</span></div>
+      </div>
+    </section>
+    
+<div class="section-label">04 / RUNNING PROCESSES</div>
+
+<section class="panel">
+  <div class="topbar" style="padding-bottom:14px">
+    <div>
+      <div class="chart-title">PROCESS EXPLORER</div>
+      <div class="metric-foot">Top 20 processes by memory usage</div>
+    </div>
+    <input
+      id="processSearch"
+      placeholder="Search process..."
+      aria-label="Search processes"
+      style="background:#080c12;color:#e6f1f7;
+      border:1px solid #263542;padding:10px;border-radius:5px;
+      max-width:190px;width:100%"
+    >
+  </div>
+
+  <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;
+    font-size:12px;text-align:left">
+      <thead>
+        <tr style="color:#8495a6">
+          <th style="padding:12px 8px">PROCESS</th>
+          <th style="padding:12px 8px">PID</th>
+          <th style="padding:12px 8px">MEMORY %</th>
+          <th style="padding:12px 8px">STATUS</th>
+        </tr>
+      </thead>
+      <tbody id="processRows">
+        <tr><td colspan="4" style="padding:15px 8px">
+          Waiting for process data...
+        </td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="metric-foot" id="processCount"
+       style="margin-top:14px">Waiting for data</div>
+</section>
+
+<div class="section-label">05 / ALERT CENTER</div>
+<section class="panel">
+  <div class="chart-title">RESOURCE ALERTS</div>
+  <div class="metric-foot" style="margin:10px 0 16px">
+    Local alerts · CPU threshold 85% · RAM threshold 90%
+  </div>
+  <div id="alertStatus" class="metric-foot">
+    Waiting for first reading...
+  </div>
+  <div id="alertLog" style="margin-top:12px"></div>
+</section>
+
+    <footer>CYBER/CC · LOCAL MONITORING · <span id="clock">--</span></footer>
+  </main>
+</div>
+
+<script>
+const history = { cpu: [], ram: [] };
+
+function setText(id, value) {
+  document.getElementById(id).textContent = value;
+}
+
+function setBar(id, value) {
+  document.getElementById(id).style.width =
+    Math.max(0, Math.min(100, value)) + "%";
+}
+
+function drawChart(id, values, stroke) {
+  const canvas = document.getElementById(id);
+  const rect = canvas.getBoundingClientRect();
+  if (!rect.width) return;
+
+  const ratio = window.devicePixelRatio || 1;
+  canvas.width = rect.width * ratio;
+  canvas.height = 150 * ratio;
+
+  const ctx = canvas.getContext("2d");
+  ctx.scale(ratio, ratio);
+
+  const w = rect.width;
+  const h = 150;
+  const pad = 12;
+
+  ctx.strokeStyle = "#263542";
+  ctx.lineWidth = 1;
+
+  for (let i = 0; i <= 4; i++) {
+    const y = pad + (h - pad * 2) * i / 4;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+    ctx.stroke();
+  }
+
+  if (values.length < 2) return;
+
+  ctx.beginPath();
+  values.forEach((v, i) => {
+    const x = pad + (w - pad * 2) * i / (values.length - 1);
+    const y = h - pad - (h - pad * 2) * v / 100;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+async function refresh() {
+  try {
+    const response = await fetch("/api/system", { cache: "no-store" });
+    if (!response.ok) throw new Error("API unavailable");
+
+    const d = await response.json();
+    updateAlerts(d.cpu_percent, d.ram_percent);
+    setText("connection", "SYSTEM ONLINE");
+    setText("cpu", d.cpu_percent + "%");
+    setText("ram", d.ram_percent + "%");
+    setText("disk", d.disk_percent + "%");
+
+    setBar("cpuBar", d.cpu_percent);
+    setBar("ramBar", d.ram_percent);
+    setBar("diskBar", d.disk_percent);
+
+    setText("ramDetail", d.ram_available_gb + " GB available");
+    setText("diskDetail", d.disk_free_gb + " GB free");
+    setText("host", d.hostname);
+    setText("os", d.operating_system + " · " + d.windows_version);
+    setText("ramTotal", d.ram_total_gb + " GB");
+    setText("ramAvailable", d.ram_available_gb + " GB");
+    setText("diskTotal", d.disk_total_gb + " GB");
+    setText("diskFree", d.disk_free_gb + " GB");
+    setText("uptime", d.uptime_hours + " hours");
+    setText("updated", d.server_time);
+
+    history.cpu.push(d.cpu_percent);
+    history.ram.push(d.ram_percent);
+    if (history.cpu.length > 30) history.cpu.shift();
+    if (history.ram.length > 30) history.ram.shift();
+
+    drawChart("cpuChart", history.cpu, "#45ffb0");
+    drawChart("ramChart", history.ram, "#4ac8ff");
+  } catch (error) {
+    setText("connection", "CONNECTION LOST");
+  }
+}
+
+
+const searchInput = document.getElementById("processSearch");
+let processData = [];
+const alerts = [];
+const alertState = { cpu: false, ram: false };
+
+function renderProcesses() {
+  const query = searchInput.value.trim().toLowerCase();
+
+  const filtered = processData.filter(p =>
+    p.name.toLowerCase().includes(query) ||
+    String(p.pid).includes(query)
+  );
+
+  const tbody = document.getElementById("processRows");
+  tbody.replaceChildren();
+
+  if (!filtered.length) {
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = 4;
+    td.style.padding = "15px 8px";
+    td.textContent = "No matching processes.";
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+  }
+
+  filtered.forEach(p => {
+    const tr = document.createElement("tr");
+    [p.name, p.pid, p.memory_percent + "%", p.status].forEach(value => {
+      const td = document.createElement("td");
+      td.style.padding = "12px 8px";
+      td.style.borderTop = "1px solid #202e3b";
+      td.textContent = value;
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById("processCount").textContent =
+    `${filtered.length} shown · ${processData.length} received`;
+}
+
+searchInput.addEventListener("input", renderProcesses);
+
+async function refreshProcesses() {
+  try {
+    const response = await fetch("/api/processes", { cache: "no-store" });
+    if (!response.ok) throw new Error("Process API unavailable");
+
+    const data = await response.json();
+    processData = data.processes;
+    renderProcesses();
+  } catch (error) {
+    document.getElementById("processCount").textContent =
+      "Could not load processes. Check the server.";
+  }
+}
+
+
+function renderAlertLog() {
+  const log = document.getElementById("alertLog");
+  log.replaceChildren();
+
+  if (!alerts.length) {
+    const p = document.createElement("p");
+    p.className = "metric-foot";
+    p.textContent = "No alerts recorded yet.";
+    log.appendChild(p);
+    return;
+  }
+
+  alerts.forEach(alert => {
+    const p = document.createElement("p");
+    p.className = "metric-foot";
+    p.style.borderTop = "1px solid #202e3b";
+    p.style.paddingTop = "10px";
+    p.textContent = `[${alert.time}] ${alert.message}`;
+    log.appendChild(p);
+  });
+}
+
+
+async function loadSavedAlerts() {
+  const response = await fetch("/api/alerts", {
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    throw new Error("Could not load saved alerts");
+  }
+
+  const data = await response.json();
+
+  alerts.splice(
+    0,
+    alerts.length,
+    ...data.alerts.map(alert => ({
+      time: alert.created_at,
+      message: `[${alert.alert_type}] ${alert.message}`
+    }))
+  );
+
+  renderAlertLog();
+}
+
+
+async function updateAlerts(cpu, ram) {
+  const checks = [
+    { key: "cpu", label: "CPU", value: cpu, limit: 85 },
+    { key: "ram", label: "RAM", value: ram, limit: 90 }
+  ];
+
+  for (const item of checks) {
+    const over = item.value >= item.limit;
+
+    if (over && !alertState[item.key]) {
+      try {
+        const response = await fetch("/api/alerts", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            alert_type: item.label,
+            message: `${item.label} usage reached ${item.value}%`,
+            value: item.value
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error("Could not save alert");
+        }
+
+        alertState[item.key] = true;
+        await loadSavedAlerts();
+
+      } catch (error) {
+        console.error("Alert persistence failed:", error);
+      }
+    } else if (!over) {
+      alertState[item.key] = false;
+    }
+  }
+
+  const active = checks.filter(item =>
+    item.value >= item.limit
+  );
+
+  document.getElementById("alertStatus").textContent =
+    active.length
+      ? "WARNING: " +
+        active.map(item => item.label + " usage is high").join(" · ")
+      : "NORMAL · No resource threshold exceeded";
+
+  renderAlertLog();
+}
+
+
+
+refresh();
+refreshProcesses();
+
+
+function activateSidebarItem(item) {
+  const targetId = item.dataset.target;
+
+  if (targetId === "overview") {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  } else {
+    const target = document.getElementById(targetId);
+
+    if (!target) {
+      console.warn("Sidebar target not found:", targetId);
+      return;
+    }
+
+    const section = target.closest(
+      ".panel, .card, .section, section"
+    ) || target;
+
+    section.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  }
+
+  document.querySelectorAll(".sidebar .nav-item").forEach(nav => {
+    nav.classList.remove("active");
+  });
+
+  item.classList.add("active");
+}
+
+document.querySelectorAll(".sidebar .nav-item").forEach(item => {
+  item.addEventListener("click", () => {
+    activateSidebarItem(item);
+  });
+
+  item.addEventListener("keydown", event => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      activateSidebarItem(item);
+    }
+  });
+});
+
+
+loadSavedAlerts().catch(error => {
+  console.error("Could not load alert history:", error);
+});
+
+refresh();
+setInterval(refresh, 2000);
+
+
+setInterval(refresh, 2000);
+setInterval(refreshProcesses, 5000);
+window.addEventListener("resize", () => {
+  drawChart("cpuChart", history.cpu, "#45ffb0");
+  drawChart("ramChart", history.ram, "#4ac8ff");
+});
+setInterval(() => {
+  setText("clock", new Date().toLocaleTimeString());
+}, 1000);
+</script>
+</body>
+</html>
