@@ -45,3 +45,46 @@ Built as a hands-on project to learn Python, web development, and system monitor
 ## Dashboard Preview
 
 ![Cyber Command Center Dashboard](screenshots/screenshot.png)
+
+## Installation on Windows
+
+### Requirements
+
+- Python 3.10 or newer
+- Windows
+
+### Setup
+
+1. Clone or download this repository.
+2. Open a terminal in the project folder.
+3. Create a virtual environment:
+
+   ```powershell
+   python -m venv .venv
+   ```
+
+4. Activate the virtual environment:
+
+   ```powershell
+   .\.venv\Scripts\Activate.ps1
+   ```
+
+5. Install dependencies:
+
+   ```powershell
+   pip install -r requirements.txt
+   ```
+
+6. Start the application:
+
+   ```powershell
+   python app.py
+   ```
+
+7. Open `http://127.0.0.1:5000` in your browser.
+
+### Notes
+
+- The application is intended for local use on your own computer.
+- Keep the terminal open while using the dashboard.
+- Press `Ctrl + C` in the terminal to stop the server.

@@ -420,6 +420,7 @@ const searchInput = document.getElementById("processSearch");
 let processData = [];
 const alerts = [];
 const alertState = { cpu: false, ram: false };
+const resetSent = { cpu: false, ram: false };
 
 function renderProcesses() {
   const query = searchInput.value.trim().toLowerCase();
@@ -531,37 +532,58 @@ async function updateAlerts(cpu, ram) {
   for (const item of checks) {
     const over = item.value >= item.limit;
 
-    if (over && !alertState[item.key]) {
-      try {
-        const response = await fetch("/api/alerts", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            alert_type: item.label,
-            message: `${item.label} usage reached ${item.value}%`,
-            value: item.value
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error("Could not save alert");
-        }
-
-        alertState[item.key] = true;
-        await loadSavedAlerts();
-
-      } catch (error) {
-        console.error("Alert persistence failed:", error);
-      }
-    } else if (!over) {
+    if (!over) {
       alertState[item.key] = false;
+
+      if (!resetSent[item.key]) {
+        resetSent[item.key] = true;
+        fetch("/api/alerts/reset", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ alert_type: item.label })
+        }).catch(error => {
+          resetSent[item.key] = false;
+          console.error("Could not reset alert state:", error);
+        });
+      }
+      continue;
+    }
+
+    resetSent[item.key] = false;
+
+    if (alertState[item.key]) {
+      continue;
+    }
+
+    alertState[item.key] = true;
+
+    try {
+      const response = await fetch("/api/alerts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          alert_type: item.label,
+          message: `${item.label} usage reached ${item.value}%`,
+          value: item.value
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Could not save alert");
+      }
+
+      await loadSavedAlerts();
+
+    } catch (error) {
+      alertState[item.key] = false;
+      console.error("Alert persistence failed:", error);
     }
   }
 
-  const active = checks.filter(item =>
-    item.value >= item.limit
+  const active = checks.filter(
+    item => item.value >= item.limit
   );
 
   document.getElementById("alertStatus").textContent =
@@ -573,10 +595,6 @@ async function updateAlerts(cpu, ram) {
   renderAlertLog();
 }
 
-
-
-refresh();
-refreshProcesses();
 
 
 function activateSidebarItem(item) {
@@ -625,21 +643,21 @@ document.querySelectorAll(".sidebar .nav-item").forEach(item => {
   });
 });
 
-
 loadSavedAlerts().catch(error => {
   console.error("Could not load alert history:", error);
 });
 
 refresh();
-setInterval(refresh, 2000);
-
+refreshProcesses();
 
 setInterval(refresh, 2000);
 setInterval(refreshProcesses, 5000);
+
 window.addEventListener("resize", () => {
   drawChart("cpuChart", history.cpu, "#45ffb0");
   drawChart("ramChart", history.ram, "#4ac8ff");
 });
+
 setInterval(() => {
   setText("clock", new Date().toLocaleTimeString());
 }, 1000);
