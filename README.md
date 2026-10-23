@@ -41,3 +41,7 @@ The application is configured for local access at `127.0.0.1`. It is intended fo
 ## Learning Project
 
 Built as a hands-on project to learn Python, web development, and system monitoring.
+
+## Dashboard Preview
+
+![Cyber Command Center Dashboard](screenshots/screenshot.png)
